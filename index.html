@@ -1,0 +1,187 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>網頁排床系統</title>
+  <style>
+    body {
+      font-family: 'Microsoft JhengHei', Arial, sans-serif;
+      background: #f4f6fa;
+      margin: 0;
+      padding: 0;
+    }
+    .container {
+      max-width: 900px;
+      margin: 30px auto;
+      background: #fff;
+      border-radius: 10px;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+      padding: 30px 40px;
+    }
+    h1 {
+      text-align: center;
+      color: #2d3a4b;
+    }
+    form {
+      display: flex;
+      gap: 20px;
+      justify-content: center;
+      margin-bottom: 30px;
+    }
+    input, select, button {
+      padding: 8px 12px;
+      border-radius: 5px;
+      border: 1px solid #ccc;
+      font-size: 16px;
+    }
+    button {
+      background: #4a90e2;
+      color: #fff;
+      border: none;
+      cursor: pointer;
+      transition: background 0.2s;
+    }
+    button:hover {
+      background: #357abd;
+    }
+    .rooms {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 20px;
+      justify-content: center;
+    }
+    .room {
+      background: #e9eef6;
+      border-radius: 8px;
+      padding: 16px;
+      min-width: 180px;
+      box-shadow: 0 1px 4px rgba(0,0,0,0.05);
+    }
+    .room-title {
+      font-weight: bold;
+      margin-bottom: 10px;
+      color: #3a4a5d;
+    }
+    .beds {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+    .bed {
+      background: #fff;
+      border: 1px solid #bfc9d9;
+      border-radius: 5px;
+      padding: 6px 10px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      min-height: 32px;
+      transition: background 0.2s;
+    }
+    .bed.occupied {
+      background: #ffd7d7;
+      border-color: #e57373;
+    }
+    .bed .name {
+      font-weight: bold;
+      color: #d32f2f;
+    }
+    .bed .gender {
+      font-size: 14px;
+      color: #555;
+    }
+    .bed.empty {
+      color: #b0b0b0;
+      font-style: italic;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1>網頁排床系統</h1>
+    <form id="assignForm">
+      <input type="text" id="name" placeholder="姓名" required>
+      <select id="gender" required>
+        <option value="">性別</option>
+        <option value="男">男</option>
+        <option value="女">女</option>
+      </select>
+      <button type="submit">分配床位</button>
+    </form>
+    <button id="clearAll" style="display:block;margin:0 auto 30px auto;background:#e57373;">一鍵刪除所有分配</button>
+    <div class="rooms" id="rooms"></div>
+  </div>
+  <script>
+    // 房間床位分配（10間房，2~4床，平均分配）
+    const roomBedCounts = [2,2,3,3,3,3,4,4,4,4];
+    const rooms = roomBedCounts.map((beds, idx) => ({
+      id: idx+1,
+      beds: Array(beds).fill(null) // null 代表空床
+    }));
+
+    function renderRooms() {
+      const roomsDiv = document.getElementById('rooms');
+      roomsDiv.innerHTML = '';
+      rooms.forEach((room, i) => {
+        const roomDiv = document.createElement('div');
+        roomDiv.className = 'room';
+        const title = document.createElement('div');
+        title.className = 'room-title';
+        title.textContent = `房間 ${room.id}（${room.beds.length}床）`;
+        roomDiv.appendChild(title);
+        const bedsDiv = document.createElement('div');
+        bedsDiv.className = 'beds';
+        room.beds.forEach((bed, j) => {
+          const bedDiv = document.createElement('div');
+          bedDiv.className = 'bed';
+          if (bed) {
+            bedDiv.classList.add('occupied');
+            bedDiv.innerHTML = `<span class="name">${bed.name}</span> <span class="gender">(${bed.gender})</span>`;
+          } else {
+            bedDiv.classList.add('empty');
+            bedDiv.textContent = `空床位`;
+          }
+          bedsDiv.appendChild(bedDiv);
+        });
+        roomDiv.appendChild(bedsDiv);
+        roomsDiv.appendChild(roomDiv);
+      });
+    }
+
+    document.getElementById('assignForm').addEventListener('submit', function(e) {
+      e.preventDefault();
+      const name = document.getElementById('name').value.trim();
+      const gender = document.getElementById('gender').value;
+      if (!name || !gender) return;
+      // 隨機分配到有空床的房間
+      let emptyBeds = [];
+      rooms.forEach((room, roomIdx) => {
+        room.beds.forEach((bed, bedIdx) => {
+          if (!bed) emptyBeds.push({roomIdx, bedIdx});
+        });
+      });
+      if (emptyBeds.length === 0) {
+        alert('所有床位已滿！');
+        return;
+      }
+      const randomIdx = Math.floor(Math.random() * emptyBeds.length);
+      const {roomIdx, bedIdx} = emptyBeds[randomIdx];
+      rooms[roomIdx].beds[bedIdx] = { name, gender };
+      renderRooms();
+      this.reset();
+    });
+
+    // 一鍵刪除功能
+    document.getElementById('clearAll').addEventListener('click', function() {
+      rooms.forEach(room => {
+        room.beds = room.beds.map(() => null);
+      });
+      renderRooms();
+    });
+
+    // 初始渲染
+    renderRooms();
+  </script>
+</body>
+</html> 
